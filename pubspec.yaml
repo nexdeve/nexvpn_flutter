@@ -1,0 +1,26 @@
+name: nexvpn_flutter
+description: A Flutter plugin for NexVPN — easy OpenVPN integration for Android and iOS.
+version: 1.0.0
+homepage: https://github.com/nextech-ai/nexvpn_flutter
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: ai.nextech.nexvpn_flutter
+        pluginClass: NexVpnFlutterPlugin
+      ios:
+        pluginClass: NexVpnFlutterPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
