@@ -1,17 +1,17 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/nexvpn__flutter-1.0.0-blue?style=for-the-badge&logo=flutter&logoColor=white" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:01579b,100:54c5f8&height=160&section=header&text=nexvpn_flutter&fontSize=44&fontColor=ffffff&animation=fadeIn&fontAlignY=42&desc=Flutter%20VPN%20Plugin%20for%20Android%20%26%20iOS&descAlignY=62&descColor=b3e5fc" />
 
-# 💙 nexvpn_flutter
+[![pub.dev](https://img.shields.io/pub/v/nexvpn_flutter?style=for-the-badge&color=54c5f8)](https://pub.dev/packages/nexvpn_flutter)
+[![License](https://img.shields.io/badge/License-Apache_2.0-6366f1?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
+[![Android](https://img.shields.io/badge/Android-21+-10b981?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+[![iOS](https://img.shields.io/badge/iOS-13+-black?style=for-the-badge&logo=apple)](https://developer.apple.com)
+[![Author](https://img.shields.io/badge/By-NexDeve-076AF4?style=for-the-badge)](https://nexdeve.com)
 
-**Flutter plugin for NexVPN — OpenVPN integration for Android & iOS**
+**Flutter plugin for NexVPN — easy OpenVPN for Android & iOS**
+Made by [nexdeve.com](https://nexdeve.com)
 
-[![pub.dev](https://img.shields.io/pub/v/nexvpn_flutter?style=flat-square&color=blue&logo=dart)](https://pub.dev/packages/nexvpn_flutter)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
-[![Android](https://img.shields.io/badge/Android-21+-green?style=flat-square&logo=android)](https://developer.android.com)
-[![iOS](https://img.shields.io/badge/iOS-13+-black?style=flat-square&logo=apple)](https://developer.apple.com)
-
-[Installation](#-installation) · [Setup](#-setup) · [Usage](#-usage) · [API](#-api) · [Android Library](https://github.com/nexdeve/nexvpn)
+[Installation](#-installation) · [Setup](#-setup) · [Usage](#-usage) · [API](#-api) · [Android Lib](https://github.com/nexdeve/nexvpn)
 
 </div>
 
@@ -19,10 +19,10 @@
 
 ## ✨ Features
 
-- 💙 **Flutter First** — clean Dart API with streams
+- 💙 **Flutter First** — clean Dart API with reactive streams
 - 🤖 **Android** — full OpenVPN via NexVPN Android library
 - 🍎 **iOS** — NetworkExtension based VPN
-- 📡 **Live Streams** — `stateStream` & `statsStream` for reactive UI
+- 📡 **Live Streams** — `stateStream` & `statsStream`
 - 📁 **Asset or String** — load `.ovpn` either way
 
 ---
@@ -30,22 +30,15 @@
 ## 📦 Installation
 
 ```yaml
-# pubspec.yaml
 dependencies:
   nexvpn_flutter: ^1.0.0
-```
-
-```bash
-flutter pub get
 ```
 
 ---
 
 ## ⚙️ Setup
 
-### Android
-
-**`android/app/build.gradle`**
+**Android** — `app/build.gradle`:
 ```gradle
 android {
     packaging {
@@ -54,23 +47,11 @@ android {
 }
 ```
 
-**`AndroidManifest.xml`**
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-```
-
-### iOS
-
-**`ios/Runner/Info.plist`**
+**iOS** — `ios/Runner/Info.plist`:
 ```xml
 <key>NEVPNEnabled</key>
 <true/>
 ```
-
-Enable **Network Extensions** capability in Xcode.
 
 ---
 
@@ -79,117 +60,67 @@ Enable **Network Extensions** capability in Xcode.
 ```dart
 import 'package:nexvpn_flutter/nexvpn_flutter.dart';
 
-class _MyState extends State<MyPage> {
-  final NexVpn _vpn = NexVpn();
-  late StreamSubscription _stateSub;
-  late StreamSubscription _statsSub;
+final vpn = NexVpn();
 
-  @override
-  void initState() {
-    super.initState();
+await vpn.attachFromAsset('assets/server.ovpn',
+    username: 'user', password: 'pass');
 
-    // Attach profile
-    _vpn.attachFromAsset('assets/server.ovpn',
-        username: 'user', password: 'pass');
+// Listen to state
+vpn.stateStream.listen((state) {
+  print(state); // VpnState.connected / disconnected / etc.
+});
 
-    // Listen to connection state
-    _stateSub = _vpn.stateStream.listen((state) {
-      print(state); // VpnState.connected / disconnected / etc.
-    });
+// Listen to live speed stats
+vpn.statsStream.listen((stats) {
+  print(VpnStats.formatSpeed(stats.downloadSpeed)); // "2.1 MB/s"
+  print(VpnStats.formatBytes(stats.downloadBytes)); // "128 MB"
+});
 
-    // Listen to live speed stats
-    _statsSub = _vpn.statsStream.listen((stats) {
-      print(VpnStats.formatSpeed(stats.downloadSpeed)); // "2.1 MB/s"
-      print(VpnStats.formatBytes(stats.downloadBytes)); // "128 MB"
-    });
-  }
-
-  Future<void> connect() async {
-    if (!await _vpn.hasVpnPermission()) {
-      await _vpn.requestVpnPermission();
-      return;
-    }
-    await _vpn.startVpn();
-  }
-
-  @override
-  void dispose() {
-    _stateSub.cancel();
-    _statsSub.cancel();
-    _vpn.release();
-    super.dispose();
-  }
+// Connect
+if (await vpn.hasVpnPermission()) {
+  await vpn.startVpn();
+} else {
+  await vpn.requestVpnPermission();
 }
+
+// Disconnect
+await vpn.stopVpn();
+
+// Cleanup
+vpn.release();
 ```
 
 ---
 
 ## 📖 API
 
-### Profile Setup
-
-| Method | Description |
-|--------|-------------|
+| Method / Stream | Description |
+|-----------------|-------------|
 | `attachFromAsset(path, {username, password})` | Load `.ovpn` from Flutter assets |
-| `attachFromString(config, {username, password})` | Load `.ovpn` from String |
-
-### Control
-
-| Method | Description |
-|--------|-------------|
+| `attachFromString(config, {username, password})` | Load from String |
 | `startVpn()` | Start VPN |
 | `stopVpn()` | Stop VPN |
-| `release()` | Free resources (call in `dispose()`) |
-
-### Streams
-
-| Stream | Type | Description |
-|--------|------|-------------|
-| `stateStream` | `Stream<VpnState>` | Real-time connection state |
-| `statsStream` | `Stream<VpnStats>` | Speed & usage every second |
-
-### VpnState enum
-
-```dart
-enum VpnState {
-  disconnected,
-  connecting,
-  connected,
-  disconnecting,
-  error,
-}
-```
-
-### VpnStats
-
-```dart
-stats.downloadBytes   // Total bytes downloaded
-stats.uploadBytes     // Total bytes uploaded
-stats.downloadSpeed   // Bytes/sec download
-stats.uploadSpeed     // Bytes/sec upload
-
-VpnStats.formatSpeed(stats.downloadSpeed) // "1.5 MB/s"
-VpnStats.formatBytes(stats.downloadBytes) // "256 MB"
-```
+| `isConnected()` | `Future<bool>` |
+| `stateStream` | `Stream<VpnState>` — realtime state |
+| `statsStream` | `Stream<VpnStats>` — speed & usage |
+| `release()` | Free resources in `dispose()` |
 
 ---
 
-## 🌐 Also Available
+## 🌐 NexVPN Ecosystem
 
-| Platform | Package |
-|----------|---------|
-| 🤖 Android | [nexvpn](https://github.com/nexdeve/nexvpn) |
-| 💙 Flutter (this) | `nexvpn_flutter` |
-| 🐍 Python | Coming soon |
+| Platform | Repo | Install |
+|----------|------|---------|
+| 🤖 Android | [nexvpn](https://github.com/nexdeve/nexvpn) | `implementation 'ai.nextech:nexvpn:1.0.0'` |
+| 💙 Flutter (this) | [nexvpn_flutter](https://github.com/nexdeve/nexvpn_flutter) | `nexvpn_flutter: ^1.0.0` |
+| 🐍 Python | [nexvpn_python](https://github.com/nexdeve/nexvpn_python) | `pip install nexvpn` |
 
 ---
-
-## 📄 License
-
-```
-Copyright 2026 NexTech — Apache License 2.0
-```
 
 <div align="center">
-Made with ❤️ by <a href="https://github.com/nexdeve">NexDeve</a>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:54c5f8,100:01579b&height=80&section=footer" />
+
+Made with ❤️ by [**NexDeve**](https://nexdeve.com) · [nexdeve.com](https://nexdeve.com) · [Telegram](https://t.me/+c34_uTIBJEpkZGM9)
+
 </div>
